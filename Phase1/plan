@@ -1,3 +1,9 @@
 A LAN messenger using TCP
 Prototype in python then move to C# or C++ to build a final version
 Remember to write documentation
+
+Header:
+    UTF-8 to avoid byte ordering issues
+    Allow variable length messages
+
+https://realpython.com/python-sockets/
