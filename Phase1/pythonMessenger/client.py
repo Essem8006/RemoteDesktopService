@@ -1,15 +1,19 @@
 import selectors
 import sys
 import socket
-import types # handle closing connection
+import types # blocking and multiple connections to 1 server
+
+if len(sys.argv) != 2:
+    print(f"Usage: {sys.argv[0]} <target host>")
+    sys.exit(1)
 
 sel = selectors.DefaultSelector()
 
 sel.register(sys.stdin, selectors.EVENT_READ)
 messages = []
 
-HOST = "127.0.0.1"
-PORT = 54321
+HOST = sys.argv[1]
+PORT = 54323 # target port
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.connect((HOST, PORT))
 events = selectors.EVENT_READ | selectors.EVENT_WRITE

@@ -8,8 +8,8 @@ sel = selectors.DefaultSelector()
 sel.register(sys.stdin, selectors.EVENT_READ)
 messages = [] # bytes out
 
-HOST = "127.0.0.1"
-PORT = 54321
+HOST = ''
+PORT = 54323
 lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 lsock.bind((HOST, PORT))
 lsock.listen()
