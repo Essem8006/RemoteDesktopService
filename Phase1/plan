@@ -7,3 +7,9 @@ Header:
     Allow variable length messages
 
 https://realpython.com/python-sockets/
+
+TODO:
+the python simple LAN messenger
+then work on screen capture APIs (saveing screenshots at intervals)
+Build a basic input injector prototype (simulate keyboard/mouse locally).
+then work on doing the same in C# or C++
