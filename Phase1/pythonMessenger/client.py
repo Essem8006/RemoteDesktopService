@@ -1,67 +1,49 @@
+import selectors
 import sys
 import socket
-import selectors
-import traceback
-
-import libClient
+import types
 
 sel = selectors.DefaultSelector()
 
+sel.register(sys.stdin, selectors.EVENT_READ)
+messages = [] # bytes out
 
-def create_request(action, value):
-    if action == "message":
-        return dict(
-            type="text/json",
-            encoding="utf-8",
-            content=dict(action=action, value=value),
+HOST = "127.0.0.1"
+PORT = 54321
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.connect((HOST, PORT))
+events = selectors.EVENT_READ | selectors.EVENT_WRITE
+data = types.SimpleNamespace(
+            outb=b"",
         )
-    else:
-        return dict(
-            type="binary/custom-client-binary-type",
-            encoding="binary",
-            content=bytes(action + value, encoding="utf-8"),
-        )
+sel.register(sock, events, data=data)
 
-def start_connection(host, port, request):
-    addr = (host, port)
-    print(f"Starting connection to {addr}")
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.setblocking(False)
-    sock.connect_ex(addr)
-    events = selectors.EVENT_READ | selectors.EVENT_WRITE
-    message = libClient.Message(sel, sock, addr, request)
-    sel.register(sock, events, data=message)
+def handle_input(fileobj, mask):
+    line = fileobj.readline().strip()
+    if line:
+        messages.append(bytes(line, "utf8"))
 
-# ...
+def service_connection(key, mask):
+    sock = key.fileobj
+    data = key.data
+    if mask & selectors.EVENT_READ:
+        recv_data = sock.recv(1024)  # Should be ready to read
+        if recv_data:
+            print(f"Received {recv_data!r}")
+    if mask & selectors.EVENT_WRITE:
+        if not data.outb and messages:
+            data.outb = messages.pop(0)
+        if data.outb:
+            print(f"Sending {data.outb!r}")
+            sent = sock.send(data.outb)  # Should be ready to write
+            data.outb = data.outb[sent:]
 
-
-if len(sys.argv) != 5:
-    print(f"Usage: {sys.argv[0]} <host> <port> <action> <value>")
-    sys.exit(1)
-
-
-host, port = sys.argv[1], int(sys.argv[2])
-action, value = sys.argv[3], sys.argv[4]
-request = create_request(action, value)
-start_connection(host, port, request)
-
-try:
-    while True:
-        events = sel.select(timeout=1)
-        for key, mask in events:
-            message = key.data
-            try:
-                message.process_events(mask)
-            except Exception:
-                print(
-                    f"Main: Error: Exception for {message.addr}:\n"
-                    f"{traceback.format_exc()}"
-                )
-                message.close()
-        # Check for a socket being monitored to continue.
-        if not sel.get_map():
-            break
-except KeyboardInterrupt:
-    print("Caught keyboard interrupt, exiting")
-finally:
-    sel.close()
+while True:
+    events = sel.select(timeout=None)
+    for key, mask in events:
+        if key.fileobj == sys.stdin:
+            handle_input(key.fileobj, mask)
+        elif key.fileobj == sock:
+            service_connection(key, mask)
+        else:
+            print("Error 1")
