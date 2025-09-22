@@ -1,7 +1,7 @@
 import selectors
 import sys
 import socket
-import types # blocking and multiple connections to 1 server
+import types # blocking and multiple connections to 1 server, doesn't like windows
 
 if len(sys.argv) != 2:
     print(f"Usage: {sys.argv[0]} <target host>")
