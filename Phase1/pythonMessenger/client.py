@@ -1,12 +1,12 @@
 import selectors
 import sys
 import socket
-import types
+import types # handle closing connection
 
 sel = selectors.DefaultSelector()
 
 sel.register(sys.stdin, selectors.EVENT_READ)
-messages = [] # bytes out
+messages = []
 
 HOST = "127.0.0.1"
 PORT = 54321
@@ -38,12 +38,15 @@ def service_connection(key, mask):
             sent = sock.send(data.outb)  # Should be ready to write
             data.outb = data.outb[sent:]
 
-while True:
-    events = sel.select(timeout=None)
-    for key, mask in events:
-        if key.fileobj == sys.stdin:
-            handle_input(key.fileobj, mask)
-        elif key.fileobj == sock:
-            service_connection(key, mask)
-        else:
-            print("Error 1")
+try:
+    while True:
+        events = sel.select(timeout=None)
+        for key, mask in events:
+            if key.fileobj == sys.stdin:
+                handle_input(key.fileobj, mask)
+            elif key.fileobj == sock:
+                service_connection(key, mask)
+except KeyboardInterrupt:
+    print("Caught keyboard interrupt, exiting")
+finally:
+    sel.close()
