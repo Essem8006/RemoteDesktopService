@@ -5,6 +5,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+using namespace std;
+
 int main()
 {
     // creating socket
@@ -20,7 +22,9 @@ int main()
     connect(clientSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress));
 
     // sending data
-    const char* message = "Hello, server!";
+    cout << "Message: ";
+    char message[1028];//max length 1027 + ender THIS IS BAD COS MY SMALL MESSAGES WILL NOW BE HUGE
+    cin >> message;
     send(clientSocket, message, strlen(message), 0);
 
     // closing socket

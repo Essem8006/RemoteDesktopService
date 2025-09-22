@@ -19,3 +19,6 @@ the python simple LAN messenger - send with proper headers
 then work on screen capture APIs (saveing screenshots at intervals)
 Build a basic input injector prototype (simulate keyboard/mouse locally).
 then work on doing the same in C# or C++
+
+APIs:
+https://stackoverflow.com/questions/50182/linux-x11-input-library-without-creating-a-window
