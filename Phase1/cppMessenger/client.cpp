@@ -24,7 +24,8 @@ int main()
     // sending data
     cout << "Message: ";
     char message[1028];//max length 1027 + ender THIS IS BAD COS MY SMALL MESSAGES WILL NOW BE HUGE
-    cin >> message;
+    cin.getline(message, sizeof message);
+    //cout << message;
     send(clientSocket, message, strlen(message), 0);
 
     // closing socket
