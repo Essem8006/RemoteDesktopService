@@ -1,4 +1,4 @@
-// C++ program to illustrate the client application in the socket programming
+#include <arpa/inet.h>   // for inet_pton
 #include <cstring>
 #include <iostream>
 #include <netinet/in.h>
@@ -9,26 +9,51 @@ using namespace std;
 
 int main()
 {
-    // creating socket
+    // create socket
     int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
+    if (clientSocket < 0) {
+        perror("Socket creation failed");
+        return 1;
+    }
 
-    // specifying address
+    // specify server address
     sockaddr_in serverAddress;
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons(8080);
-    serverAddress.sin_addr.s_addr = INADDR_ANY;
 
-    // sending connection request
-    connect(clientSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress));
+    // convert IPv4 address from text to binary
+    if (inet_pton(AF_INET, "127.0.0.1", &serverAddress.sin_addr) <= 0) {
+        perror("Invalid address/Address not supported");
+        return 1;
+    }
 
-    // sending data
-    cout << "Message: ";
-    char message[1028];//max length 1027 + ender THIS IS BAD COS MY SMALL MESSAGES WILL NOW BE HUGE
-    cin.getline(message, sizeof message);
-    //cout << message;
-    send(clientSocket, message, strlen(message), 0);
+    // connect to server
+    if (connect(clientSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) < 0) {
+        perror("Connection failed");
+        return 1;
+    }
 
-    // closing socket
+    // send message
+    cout << "Enter message: ";
+    string message;
+    getline(cin, message);
+
+    if (send(clientSocket, message.c_str(), message.size(), 0) < 0) {
+        perror("Send failed");
+        return 1;
+    }
+
+    // receive echo
+    char buffer[1024] = {0};
+    int bytesReceived = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
+    if (bytesReceived < 0) {
+        perror("Receive failed");
+        return 1;
+    }
+    buffer[bytesReceived] = '\0'; // null-terminate
+    cout << "Echo from server: " << buffer << endl;
+
+    // close socket
     close(clientSocket);
 
     return 0;
