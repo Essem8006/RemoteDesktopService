@@ -1,11 +1,48 @@
+#include <arpa/inet.h>
 #include <cstring>
 #include <iostream>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <thread> // for the messaging
+#include <thread>
 
 using namespace std;
+
+void recieve_messages(int clientSocket) {
+    char buffer[1024] = {0};
+    while (true) {
+        memset(buffer, 0, sizeof(buffer));
+        int bytesReceived = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
+        if (bytesReceived > 0) {
+            buffer[bytesReceived] = '\0'; // null-terminate WHAT IS THIS
+            cout << "\nClient: " << buffer << "\n> " << flush;
+        }
+        else if (bytesReceived < 0) {
+            perror("Receive failed");
+            break;
+        }
+        else{// bytesrecieved == 0
+            cout << "\nClient disconnected.\n";
+            break;
+        }
+    }
+    close(clientSocket);
+    exit(0); // end program?
+}
+void send_messages(int clientSocket) {
+    string message;
+    while (true) {
+        cout << "> " << flush;
+        getline(cin, message);
+        if (message.size() == 0) { break; }
+        if (send(clientSocket, message.c_str(), message.size(), 0) < 0) {
+            perror("Send failed");
+            break;
+        }
+    }
+    close(clientSocket);
+    exit(0); // end program
+}
 
 int main()
 {
@@ -40,21 +77,15 @@ int main()
     if (clientSocket < 0) {
         perror("Accept failed");
         return 1;
-    } else {
-        cout << "Connected to client: " << clientSocket << endl;
     }
+    cout << "Connected to client: " << clientSocket << endl;
 
-    // receiving data
-    char buffer[1024] = {0};
-    recv(clientSocket, buffer, sizeof(buffer), 0);
-    cout << "Message from client: " << buffer << endl;
+    thread r(recieve_messages, clientSocket);
+    thread s(send_messages, clientSocket);
 
-    // send echo
-    send(clientSocket, buffer, strlen(buffer), 0);
-    cout << "Echoed message to client: " << buffer << endl;
+    s.join();
+    r.join();
 
-    // closing sockets
-    close(clientSocket);// WHY DO THAT HERE
     close(serverSocket);
 
     return 0;

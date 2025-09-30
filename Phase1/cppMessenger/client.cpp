@@ -4,8 +4,45 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <thread>
 
 using namespace std;
+
+void recieve_messages(int clientSocket) {
+    char buffer[1024] = {0};
+    while (true) {
+        memset(buffer, 0, sizeof(buffer));
+        int bytesReceived = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
+        if (bytesReceived > 0) {
+            buffer[bytesReceived] = '\0'; // null-terminate WHAT IS THIS
+            cout << "\nServer: " << buffer << "\n> " << flush;
+        }
+        else if (bytesReceived < 0) {
+            perror("Receive failed");
+            break;
+        }
+        else{// bytesrecieved == 0
+            cout << "\nServer disconnected.\n";
+            break;
+        }
+    }
+    close(clientSocket);
+    exit(0); // end program
+}
+void send_messages(int clientSocket) {
+    string message;
+    while (true) {
+        cout << "> " << flush;
+        getline(cin, message);
+        if (message.size() == 0) { break; }
+        if (send(clientSocket, message.c_str(), message.size(), 0) < 0) {
+            perror("Send failed");
+            break;
+        }
+    }
+    close(clientSocket);
+    exit(0); // end program
+}
 
 int main()
 {
@@ -32,29 +69,15 @@ int main()
         perror("Connection failed");
         return 1;
     }
+    cout << "Connected to server";
 
-    // send message
-    cout << "Enter message: ";
-    string message;
-    getline(cin, message);
+    thread recieve(recieve_messages, clientSocket);
+    thread sending(send_messages, clientSocket);
+    
 
-    if (send(clientSocket, message.c_str(), message.size(), 0) < 0) {
-        perror("Send failed");
-        return 1;
-    }
-
-    // receive echo
-    char buffer[1024] = {0};
-    int bytesReceived = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
-    if (bytesReceived < 0) {
-        perror("Receive failed");
-        return 1;
-    }
-    buffer[bytesReceived] = '\0'; // null-terminate
-    cout << "Echo from server: " << buffer << endl;
-
-    // close socket
-    close(clientSocket);
+    // join threads (keeps program alive)
+    sending.join();
+    recieve.join();
 
     return 0;
 }
