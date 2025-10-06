@@ -14,6 +14,8 @@ C++ is nicer to me than c#
 $ g++ cplus.cpp
 $ ./a.out
 
+
+
 TODO:
 the python simple LAN messenger - send with proper headers
 then work on screen capture APIs (saveing screenshots at intervals)
@@ -25,3 +27,5 @@ https://stackoverflow.com/questions/50182/linux-x11-input-library-without-creati
 
 
 https://www.geeksforgeeks.org/cpp/multithreading-in-cpp/ <-THREADING>
+
+https://www.reddit.com/r/cpp_questions/comments/1082svy/how_do_i_move_my_mouse_and_click_in_c/ (c++ mouse control)
