@@ -6,46 +6,72 @@
 #include <unistd.h>
 #include <thread>
 
-
 using namespace std;
   
-#define PORT     8080 
+#define PORT     8080 // server port number
 #define MAXLINE 1024 
+
+void recieve_messages(int clientSocket, sockaddr_in serverAddress) {
+    socklen_t len; 
+    char buffer[MAXLINE];
+    while (true) {
+        int bytesReceived = recvfrom(clientSocket, (char *)buffer, MAXLINE, MSG_WAITALL, (struct sockaddr *) &serverAddress, &len); 
+        if (bytesReceived > 0) {
+            buffer[bytesReceived] = '\0'; // null-terminate WHAT IS THIS
+            cout << "Server :"<<buffer<< endl; 
+        }
+        else if (bytesReceived < 0) {
+            perror("Receive failed");
+            break;
+        }
+        else{
+            cout << "\nServer disconnected.\n";
+            break;
+        }
+    }
+    close(clientSocket);
+    exit(0); // end program
+}
+
+void send_messages(int clientSocket, sockaddr_in serverAddress) {
+    string message;
+    while (true) {
+        cout << "> " << flush;
+        getline(cin, message);
+        if (message.size() == 0) { break; }
+        if (sendto(clientSocket, message.c_str(), message.size(), MSG_CONFIRM, (const struct sockaddr *) &serverAddress, sizeof(serverAddress)) < 0) {
+            perror("Send failed");
+            break;
+        }
+    }
+    close(clientSocket);
+    exit(0); // end program
+}
   
 // Driver code 
 int main() { 
-    int sockfd; 
-    char buffer[MAXLINE]; 
-    const char *hello = "Hello from client"; 
-    struct sockaddr_in     servaddr; 
+    int clientSocket;
   
     // Creating socket file descriptor 
-    if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
+    if ( (clientSocket = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
         perror("socket creation failed"); 
-        exit(EXIT_FAILURE); 
+        return 1;
     } 
-  
-    memset(&servaddr, 0, sizeof(servaddr)); 
+
       
     // Filling server information 
-    servaddr.sin_family = AF_INET; 
-    servaddr.sin_port = htons(PORT); 
-    servaddr.sin_addr.s_addr = INADDR_ANY; 
-      
-    int n;
-    socklen_t len; 
-      
-    sendto(sockfd, (const char *)hello, strlen(hello), 
-        MSG_CONFIRM, (const struct sockaddr *) &servaddr,  
-            sizeof(servaddr)); 
-    cout << "Hello message sent." << endl; 
+    sockaddr_in serverAddress;
+    memset(&serverAddress, 0, sizeof(serverAddress)); 
+    serverAddress.sin_family = AF_INET; 
+    serverAddress.sin_port = htons(PORT); 
+    serverAddress.sin_addr.s_addr = INADDR_ANY;
           
-    n = recvfrom(sockfd, (char *)buffer, MAXLINE,  
-                MSG_WAITALL, (struct sockaddr *) &servaddr, 
-                &len); 
-    buffer[n] = '\0'; 
-    cout << "Server :"<<buffer<< endl; 
+    thread recieve(recieve_messages, clientSocket, serverAddress);
+    thread sending(send_messages, clientSocket, serverAddress);
+    
+    // join threads (keeps program alive)
+    sending.join();
+    recieve.join();
   
-    close(sockfd); 
     return 0; 
 }

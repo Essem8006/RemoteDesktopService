@@ -21,7 +21,7 @@ void recieve_messages(int clientSocket) {
             perror("Receive failed");
             break;
         }
-        else{// bytesrecieved == 0
+        else{
             cout << "\nServer disconnected.\n";
             break;
         }
