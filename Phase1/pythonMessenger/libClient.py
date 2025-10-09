@@ -52,8 +52,8 @@ class Message:
             except BlockingIOError:
                 # Resource temporarily unavailable (errno EWOULDBLOCK)
                 pass
-            else:
-                self._send_buffer = self._send_buffer[sent:]
+        else:
+            self._send_buffer = self._send_buffer[sent:]
 
     def _json_encode(self, obj, encoding):
         return json.dumps(obj, ensure_ascii=False).encode(encoding)

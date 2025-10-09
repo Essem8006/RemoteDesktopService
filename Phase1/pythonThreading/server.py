@@ -16,6 +16,7 @@ running = True
 lsock.bind((HOST, PORT))
 print(f"Bound to {(HOST, PORT)}")
 
+
 def input_thread():
     global running
     try:

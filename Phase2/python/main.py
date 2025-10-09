@@ -3,6 +3,9 @@ import pyautogui
 import cv2
 import numpy as np
 
+from PIL import Image
+import io
+
 # Specify resolution
 resolution = (1920, 1080)
 
@@ -26,12 +29,26 @@ cv2.namedWindow("Live", cv2.WINDOW_NORMAL)
 # Resize this window
 cv2.resizeWindow("Live", 480, 270)
 
+def pil_encode(img):
+    img_byte_arr = io.BytesIO()
+    img.save(img_byte_arr, format="PNG")
+    return img_byte_arr.getvalue()
+
+def pil_decode(byte_array):
+    return Image.open(io.BytesIO(byte_array))
+
 while True:
     # Take screenshot using PyAutoGUI
     img = pyautogui.screenshot()
 
+    # Example usage
+    encoded = pil_encode(img)
+    decoded = pil_decode(encoded)
+    print(type(decoded))
+
+
     # Convert the screenshot to a numpy array
-    frame = np.array(img)
+    frame = np.array(decoded)
 
     # Convert it from BGR(Blue, Green, Red) to
     # RGB(Red, Green, Blue)
