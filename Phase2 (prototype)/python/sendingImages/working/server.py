@@ -5,8 +5,6 @@ HOST = ''
 PORT = 54323
 lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 send_buffer = b""
-clientAddress = None
-running = True
 lsock.bind((HOST, PORT))
 lsock.listen()
 print(f"Listening on {(HOST, PORT)}")
@@ -48,13 +46,8 @@ def create_message(content_bytes, content_type, content_encoding):
         return message
 
 
-message = create_message(pil_encode(img), "PIL image object", "PNG")
-send_buffer += message
-
 try:
-    recv_data = conn.recv(1024)
-    print(f"Received '{recv_data!r}'")
-    while running:
+    while True:
         if len(send_buffer) > 0:
             if len(send_buffer) > 1400:
                 to_send = send_buffer[:1024]
@@ -63,10 +56,9 @@ try:
             len_sent = conn.send(to_send)
             send_buffer = send_buffer[len_sent:]
         else:
-            break
-    print('done')
+            send_buffer += create_message(pil_encode(pyautogui.screenshot()), "PIL image object", "PNG")
+
 except KeyboardInterrupt:
     print("Caught keyboard interrupt, exiting...")
 finally:
-    running = False
     lsock.close()

@@ -13,7 +13,6 @@ sock.connect((HOST, PORT))
 
 send_buffer = b""
 recv_buffer = b""
-running = True
 
 # Message encoding
 import json
@@ -35,26 +34,8 @@ def json_decode(json_bytes, encoding):
     tiow.close()
     return obj
 
-def pil_encode(obj):
-    img_byte_arr = io.BytesIO()
-    obj.save(img_byte_arr, format="PNG")
-    img_byte_arr = img_byte_arr.getvalue()
-    return img_byte_arr
-
 def pil_decode(byte_array):
     return Image.open(io.BytesIO(byte_array))
-
-def create_message(content_bytes, content_type, content_encoding):
-        jsonheader = {
-            "byteorder": sys.byteorder,
-            "content-type": content_type,
-            "content-encoding": content_encoding,
-            "content-length": len(content_bytes),
-        }
-        jsonheader_bytes = json_encode(jsonheader, "utf-8")
-        message_hdr = struct.pack(">H", len(jsonheader_bytes))
-        message = message_hdr + jsonheader_bytes + content_bytes
-        return message
 
 def process_protoheader(recv_buffer):
     hdrlen = 2
@@ -85,21 +66,21 @@ def process_response(recv_buffer, jsonheader):
             print('Big error')
     return [None, recv_buffer]
 
+import cv2
+import numpy as np
+resolution = (1920, 1080)
+codec = cv2.VideoWriter_fourcc(*"XVID")
+filename = "Recording.avi"
+fps = 60.0
+out = cv2.VideoWriter(filename, codec, fps, resolution)
+cv2.namedWindow("Live", cv2.WINDOW_NORMAL)
+cv2.resizeWindow("Live", 480, 270)
+
 try:
-    line = sys.stdin.readline()
-    line = line.strip()
-    message = create_message(line.encode("utf-8"), "text", "utf-8")
-    send_buffer += message
-    while running:
-        if len(send_buffer) > 0:
-            len_sent = sock.send(send_buffer)
-            send_buffer = send_buffer[len_sent:]
-        else:
-            break
     jsonheader_len = None
     jsonheader = None
     content = None
-    for i in range(1000):
+    while True:
         recv_data= sock.recv(1024)
         recv_buffer += recv_data
         if jsonheader_len is None:
@@ -115,12 +96,17 @@ try:
             content = temp[0]
             recv_buffer = temp[1]
         if content is not None:
-            break
-    content.show()
+            frame = np.array(content)
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            out.write(frame)
+            cv2.imshow('Live', frame)
+            if cv2.waitKey(1) == ord('q'):
+                break
+            jsonheader_len = None
+            jsonheader = None
+            content = None
         
-    print('done')
 except KeyboardInterrupt:
     print("Caught keyboard interrupt, exiting...")
 finally:
-    running = False
     sock.close()
