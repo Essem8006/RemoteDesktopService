@@ -37,8 +37,11 @@ def process_response(recv_buffer, jsonheader):
     if len(recv_buffer) >= content_len:
         data = recv_buffer[:content_len]
         recv_buffer = recv_buffer[content_len:]
-        if jsonheader["content-type"] == "PIL image object":
-            return [pil_decode(data), recv_buffer]
-        else:
-            print('Big error')
+        match jsonheader["content-type"]:
+            case "PIL image object":
+                return [pil_decode(data), recv_buffer]
+            case "Mouse position":
+                return [json_decode(data, "utf-8"), recv_buffer]
+            case _:
+                print(f'Unknown content type {jsonheader["content-type"]} in a recieved message.')
     return [None, recv_buffer]

@@ -26,6 +26,15 @@ cv2.namedWindow("Live", cv2.WINDOW_NORMAL)
 # Resize this window
 cv2.resizeWindow("Live", 480, 270)
 
+
+def mouse_position(event, x, y, flags, param):
+    global mouse_x, mouse_y
+    if event == cv2.EVENT_MOUSEMOVE:
+        mouse_x, mouse_y = x, y  # update coordinates
+
+# Bind the callback function to the window
+cv2.setMouseCallback("Live", mouse_position)
+
 while True:
     # Take screenshot using PyAutoGUI
     img = pyautogui.screenshot()
@@ -36,6 +45,8 @@ while True:
     # Convert it from BGR(Blue, Green, Red) to
     # RGB(Red, Green, Blue)
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+    cv2.putText(frame, f"Mouse: ({mouse_x}, {mouse_y})", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
     # Write it to the output file
     out.write(frame)
