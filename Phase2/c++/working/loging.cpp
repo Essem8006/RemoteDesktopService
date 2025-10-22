@@ -13,12 +13,39 @@ Window window;
 GC gc;
 unsigned long black, grey, light, white;
 
-int controlData[7] = {0,0,0,0,0,0,0};
-string controlLabel[7] = {"Control pointer", "Disconnect", "Option 3", ""};
+bool controlData[7] = {0,0,0,0,0,0,0};
+string controlLabel[7] = {"Control pointer", "Disconnect", "Option 3", "Send text", "View directories", "Server blackout", "Open chat"};
 
-void init();
-void close();
-void draw();
+void init() {
+    display = XOpenDisplay(nullptr);
+    if (!display) {
+        cerr << "Failed to open X display.\n";
+    }
+    screen = DefaultScreen(display);
+    black = BlackPixel(display, screen);
+    grey = RGB(150,150,150);
+    light = RGB(200,200,200);
+    white = WhitePixel(display, screen);
+
+    window = XCreateSimpleWindow(display, RootWindow(display, screen), 0, 0, 800, 600, 1, black, light);//border_width bordercol and backgroundcol at end
+    XSetStandardProperties(display, window, "Word", "Hi", None, NULL, 0, NULL);
+    XSelectInput(display, window, ExposureMask | KeyPressMask | ButtonPressMask | PointerMotionMask);// tells X server what events we want from it
+    gc = XCreateGC(display, window, 0, nullptr);
+    XClearWindow(display, window);
+    XMapRaised(display, window);
+}
+
+void close() {
+    XFreeGC(display, gc);
+    XDestroyWindow(display, window);
+    XCloseDisplay(display);
+    exit(0);
+}
+
+void draw() {
+    XClearWindow(display, window);
+}
+
 unsigned long RGB(int r, int g, int b) {
     return (r<<16) + (g<<8) + b;
 }
@@ -77,7 +104,12 @@ XImage* convertFrameToImage(Frame frame, Display* display, int screen, int imgWi
     //If you mean change the pixel dimensions of the XImage, no, there is no way to do that. If you want to scale the image pixels, you would use XRender on the server side or something like the Cairo library on the client side. But you still will have to scale to a different image (or window or pixmap), since you can't resize an allocated XImage.
     for (int y = 0; y < imgHeight; ++y) {
         for (int x = 0; x < imgWidth; ++x) {
-            int idx = (y * frame.width + floor(x*frame.width/imgWidth)) * 3;
+            int idx;
+            if (0 == controlData[2]) {
+                idx = (floor(y) * frame.width + floor(x)) * 3;
+            } else {
+                idx = (floor(y*frame.height/imgHeight) * frame.width + floor(x*frame.width/imgWidth)) * 3;
+            }
             unsigned char b = frame.data[idx];
             unsigned char g = frame.data[idx + 1];
             unsigned char r = frame.data[idx + 2];
@@ -125,12 +157,13 @@ int main() {
     while (true) {
         XWindowAttributes winAttr;
         XGetWindowAttributes(display, window, &winAttr);
-        int winHeight = winAttr.height;
         int winWidth = winAttr.width;
         // event loop
         while (XPending(display)) {
             XNextEvent(display, &e);
-            if (e.type == KeyPress) close();
+            if (e.type == KeyPress && controlData[3]) {
+                close();
+            };
             if (e.type == Expose) draw();
             if (e.type == ButtonPress) {
                 int x = e.xbutton.x, y = e.xbutton.y;
@@ -144,12 +177,13 @@ int main() {
             };
             if (e.type == MotionNotify) {
                 int x = e.xbutton.x, y = e.xbutton.y;
-                XClearArea(display, window, 3, winHeight - 13, 200, 10, False);// false means doesn't trigger expose event
+                XClearArea(display, window, 3, winAttr.height - 13, 140, 10, False);// false means doesn't trigger expose event
                 string text = "Pointer at: " + to_string(x) + ", " + to_string(y);
                 XSetForeground(display, gc, black);
-                XDrawString(display,window,gc,3,winHeight - 3,text.c_str(),strlen(text.c_str()));
+                XDrawString(display,window,gc,3,winAttr.height - 3,text.c_str(),strlen(text.c_str()));
             };
         }
+        
         updateControls(0, 0);
 
         Frame frame = captureScreenFrame(display);
@@ -157,43 +191,12 @@ int main() {
             cerr << "Failed to capture frame.\n";
             break;
         }
-        XImage* image = convertFrameToImage(frame, display, screen, winWidth-153, winHeight-6);
-        XPutImage(display, window, gc, image, 0, 0, 150, 3, winWidth-153, winHeight-6);
+        XImage* image = convertFrameToImage(frame, display, screen, winAttr.width-153, winAttr.height-6);
+        XPutImage(display, window, gc, image, 0, 0, 150, 3, winAttr.width-153, winAttr.height-6);
         XDestroyImage(image);
 
         usleep(10000); // 10 ms = 100 FPS
     }
 
     return 0;
-}
-
-
-void init() {
-    display = XOpenDisplay(nullptr);
-    if (!display) {
-        cerr << "Failed to open X display.\n";
-    }
-    screen = DefaultScreen(display);
-    black = BlackPixel(display, screen);
-    grey = RGB(150,150,150);
-    light = RGB(200,200,200);
-    white = WhitePixel(display, screen);
-
-    window = XCreateSimpleWindow(display, RootWindow(display, screen), 0, 0, 800, 600, 1, black, light);//border_width bordercol and backgroundcol at end
-    XSetStandardProperties(display, window, "Word", "Hi", None, NULL, 0, NULL);
-    XSelectInput(display, window, ExposureMask | KeyPressMask | ButtonPressMask | PointerMotionMask);// tells X server what events we want from it
-    gc = XCreateGC(display, window, 0, nullptr);
-    XClearWindow(display, window);
-    XMapRaised(display, window);
-}
-
-void close() {
-    XFreeGC(display, gc);
-    XDestroyWindow(display, window);
-    XCloseDisplay(display);
-    exit(0);
-}
-
-void draw() {
-    XClearWindow(display, window);
 }
