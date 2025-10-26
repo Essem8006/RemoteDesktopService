@@ -150,17 +150,6 @@ int main() {
             dataPtr += bytesSent;
             len -= bytesSent;
         }
-
-        /*for (int y = 0; y < frame.height; ++y) {
-            for (int x = 0; x < frame.width; ++x) {
-                for (int i=0; i< 3; ++i) {
-                    if (send(clientSocket, &frame.data[(y * frame.width + x) * 3 + i], sizeof(unsigned char), 0)  < 0) {
-                        perror("Send failed");
-                    }
-                }
-            }
-        }*/
-
     }
 
     close(serverSocket);

@@ -141,33 +141,14 @@ void recieve_messages(int clientSocket) {
         unsigned char* ptr = frame.data.data();
         while (len > 0) {
             int chunkSize = min(len, 1024);
-            int bytesReceived = recv(clientSocket, ptr, sizeof(unsigned char) * chunkSize, 0);
+            int bytesReceived = recv(clientSocket, ptr, chunkSize, 0);
             if (bytesReceived  <= 0) {
                 perror("Send failed");
                 break;
-            } else {
-                ptr += bytesReceived;
-                len -= bytesReceived;
             }
+            ptr += bytesReceived;
+            len -= bytesReceived;
         }
-
-        /*unsigned char buffer;
-        for (int y = 0; y < height; ++y) {
-            for (int x = 0; x < width; ++x) {
-                for (int i=0; i< 3; ++i) {
-                    int bytesReceived = recv(clientSocket, &buffer, sizeof(unsigned char), 0);
-                    if (bytesReceived > 0) {
-                        frame.data[(y * width + x) * 3 + i] = buffer;
-                    }
-                    else if (bytesReceived < 0) {
-                        perror("Receive failed");
-                    }
-                    else{
-                        cout << "\nServer disconnected.\n";
-                    }
-                }
-            }
-        }*/
         
         XWindowAttributes winAttr;
         XGetWindowAttributes(display, window, &winAttr);
@@ -242,7 +223,7 @@ int main() {
         
         updateControls(0, 0);
 
-        usleep(10000); // 10 ms = 100 FPS
+        usleep(1000); // 1 ms = 1000 FPS
     }
 
     recieve.join();
