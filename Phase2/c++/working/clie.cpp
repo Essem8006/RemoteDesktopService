@@ -4,6 +4,10 @@
 #include <vector>
 #include <unistd.h> // for usleep()
 #include <string.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>   // for inet_pton
+#include <thread>
 
 using namespace std;
 
@@ -15,6 +19,10 @@ unsigned long black, grey, light, white;
 
 bool controlData[7] = {0,0,0,0,0,0,0};
 string controlLabel[7] = {"Control pointer", "Disconnect", "Option 3", "Send text", "View directories", "Server blackout", "Open chat"};
+
+unsigned long RGB(int r, int g, int b) {
+    return (r<<16) + (g<<8) + b;
+}
 
 void init() {
     display = XOpenDisplay(nullptr);
@@ -46,10 +54,6 @@ void draw() {
     XClearWindow(display, window);
 }
 
-unsigned long RGB(int r, int g, int b) {
-    return (r<<16) + (g<<8) + b;
-}
-
 int floor(double i) {
     return (int)i;
 }
@@ -60,43 +64,6 @@ struct Frame {
     vector<unsigned char> data; // BGR format
 };
 
-Frame captureScreenFrame(Display* display) {
-    Frame frame{};
-    Window root = DefaultRootWindow(display);
-
-    XWindowAttributes gwa;
-    XGetWindowAttributes(display, root, &gwa);
-    int width = gwa.width;
-    int height = gwa.height;
-
-    XImage* img = XGetImage(display, root, 0, 0, width, height, AllPlanes, ZPixmap);
-    if (!img) {
-        cerr << "Failed to capture X11 image.";
-        return frame;
-    }
-
-    frame.width = width;
-    frame.height = height;
-    frame.data.resize(width * height * 3);// set size of frame data
-
-    // Convert from XImage pixel (BGRX) to BGR
-    for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
-            unsigned long pixel = XGetPixel(img, x, y);
-            unsigned char blue  = pixel & 0xFF;
-            unsigned char green = (pixel >> 8) & 0xFF;
-            unsigned char red   = (pixel >> 16) & 0xFF;
-            int idx = (y * width + x) * 3;
-            frame.data[idx] = blue;
-            frame.data[idx + 1] = green;
-            frame.data[idx + 2] = red;
-        }
-    }
-
-    XDestroyImage(img);
-    return frame;
-}
-
 XImage* convertFrameToImage(Frame frame, Display* display, int screen, int imgWidth, int imgHeight) {
     XImage* image = XCreateImage(display, DefaultVisual(display, screen), DefaultDepth(display, screen), ZPixmap, 0,
         (char*)malloc(imgWidth * imgHeight * 4), imgWidth, imgHeight, 32, 0
@@ -106,7 +73,7 @@ XImage* convertFrameToImage(Frame frame, Display* display, int screen, int imgWi
         for (int x = 0; x < imgWidth; ++x) {
             int idx;
             if (0 == controlData[2]) {
-                idx = (floor(y) * frame.width + floor(x)) * 3;
+                idx = (y * frame.width + x) * 3;
             } else {
                 idx = (floor(y*frame.height/imgHeight) * frame.width + floor(x*frame.width/imgWidth)) * 3;
             }
@@ -150,14 +117,103 @@ void updateControls(int x, int y) {
     }
 }
 
+void recieve_messages(int clientSocket) {
+    while (true) {
+        // get dimentions
+        int height;
+        recv(clientSocket, &height, 4, 0);// 4 bytes is size of int
+        //cout << "Height is: " << height << endl;
+        int width;
+        recv(clientSocket, &width, 4, 0);
+        //cout << "Width is: " << width << endl;
+
+        if (send(clientSocket, &width, sizeof(int), 0)  < 0) {
+            perror("Send failed on validation");
+            break;
+        }
+
+        Frame frame{};
+        frame.width = width;
+        frame.height = height;
+        frame.data.resize(width * height * 3);
+
+        int len = frame.data.size();
+        unsigned char* ptr = frame.data.data();
+        while (len > 0) {
+            int chunkSize = min(len, 1024);
+            int bytesReceived = recv(clientSocket, ptr, sizeof(unsigned char) * chunkSize, 0);
+            if (bytesReceived  <= 0) {
+                perror("Send failed");
+                break;
+            } else {
+                ptr += bytesReceived;
+                len -= bytesReceived;
+            }
+        }
+
+        /*unsigned char buffer;
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < width; ++x) {
+                for (int i=0; i< 3; ++i) {
+                    int bytesReceived = recv(clientSocket, &buffer, sizeof(unsigned char), 0);
+                    if (bytesReceived > 0) {
+                        frame.data[(y * width + x) * 3 + i] = buffer;
+                    }
+                    else if (bytesReceived < 0) {
+                        perror("Receive failed");
+                    }
+                    else{
+                        cout << "\nServer disconnected.\n";
+                    }
+                }
+            }
+        }*/
+        
+        XWindowAttributes winAttr;
+        XGetWindowAttributes(display, window, &winAttr);
+        XImage* image = convertFrameToImage(frame, display, screen, winAttr.width-153, winAttr.height-6);
+        XPutImage(display, window, gc, image, 0, 0, 150, 3, winAttr.width-153, winAttr.height-6);
+        XDestroyImage(image);
+    }
+
+    close(clientSocket);
+    //exit(0); // end program
+}
+
 int main() {
     init();
+
+    // create socket
+    int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
+    if (clientSocket < 0) {
+        perror("Socket creation failed");
+        return 1;
+    }
+
+    // specify server address
+    sockaddr_in serverAddress;
+    serverAddress.sin_family = AF_INET;
+    serverAddress.sin_port = htons(8080);
+
+    // convert IPv4 address from text to binary
+    if (inet_pton(AF_INET, "127.0.0.1", &serverAddress.sin_addr) <= 0) {
+        perror("Invalid address/Address not supported");
+        return 1;
+    }
+
+    // connect to server
+    if (connect(clientSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) < 0) {
+        perror("Connection failed");
+        return 1;
+    }
+    cout << "Connected to server" << endl;
+
+    thread recieve(recieve_messages, clientSocket);
 
     XEvent e;
     while (true) {
         XWindowAttributes winAttr;
         XGetWindowAttributes(display, window, &winAttr);
-        int winWidth = winAttr.width;
         // event loop
         while (XPending(display)) {
             XNextEvent(display, &e);
@@ -186,17 +242,10 @@ int main() {
         
         updateControls(0, 0);
 
-        Frame frame = captureScreenFrame(display);
-        if (frame.data.empty()) {
-            cerr << "Failed to capture frame.\n";
-            break;
-        }
-        XImage* image = convertFrameToImage(frame, display, screen, winAttr.width-153, winAttr.height-6);
-        XPutImage(display, window, gc, image, 0, 0, 150, 3, winAttr.width-153, winAttr.height-6);
-        XDestroyImage(image);
-
         usleep(10000); // 10 ms = 100 FPS
     }
+
+    recieve.join();
 
     return 0;
 }

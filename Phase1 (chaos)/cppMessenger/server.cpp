@@ -14,7 +14,7 @@ void recieve_messages(int clientSocket) {
         memset(buffer, 0, sizeof(buffer));
         int bytesReceived = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
         if (bytesReceived > 0) {
-            buffer[bytesReceived] = '\0'; // null-terminate WHAT IS THIS
+            buffer[bytesReceived] = '\0'; // null-terminate for old c strings to make them ok
             cout << "\nClient: " << buffer << "\n> " << flush;
         }
         else if (bytesReceived < 0) {
