@@ -104,21 +104,42 @@ void init() {
 
 void recieve_messages() {
     while (true) {
-        // ----------------------- reconstruct frame ------------------------------
-        int mousePos[2] = {0,0};
-        int bytesReceived = recv(clientSocket, &mousePos, 8, 0);
-        if (bytesReceived == 8) {
-            // -------------------- move mouse -----------------------------------
-            cout << mousePos[0] << ", " << mousePos[1] << endl;
-        }
-        else if (bytesReceived == 0) {
-            cout << "\nClient disconnected.\n";
-            break;
-        }
-        else{
-            cout << bytesReceived << endl;
-            perror("Receive failed");
-            break;
+        char fakeheader;
+        recv(clientSocket, &fakeheader, 1, 0);
+        if ('m' == fakeheader){// replace with case switch
+            int mousePos[2] = {0,0};
+            int bytesReceived = recv(clientSocket, &mousePos, 8, 0);
+            if (bytesReceived == 8) {
+                // -------------------- move mouse -----------------------------------
+                cout << mousePos[0] << ", " << mousePos[1] << endl;
+            }
+            else if (bytesReceived == 0) {
+                cout << "\nClient disconnected.\n";
+                break;
+            }
+            else{
+                cout << bytesReceived << endl;
+                perror("Receive failed");
+                break;
+            }
+        } else if ('k' == fakeheader) {
+            int key;
+            int bytesReceived = recv(clientSocket, &key, 4, 0);
+            if (bytesReceived == 4) {
+                // -------------------- key press -----------------------------------
+                cout << key << endl;
+            }
+            else if (bytesReceived == 0) {
+                cout << "\nClient disconnected.\n";
+                break;
+            }
+            else{
+                cout << bytesReceived << endl;
+                perror("Receive failed");
+                break;
+            }
+        }else {
+            cout << "invalid fakeheader" << endl;
         }
     }
 }
