@@ -2,11 +2,11 @@
 #include <X11/Xutil.h>
 #include <iostream>
 #include <vector>
-#include <unistd.h> // for usleep()
+#include <unistd.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <arpa/inet.h>   // for inet_pton
+#include <arpa/inet.h>
 #include <thread>
 
 using namespace std;
@@ -165,25 +165,23 @@ void recieve_messages(int clientSocket) {
 int main() {
     init();
 
-    // create socket
     int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (clientSocket < 0) {
         perror("Socket creation failed");
         return 1;
     }
 
-    // specify server address
     sockaddr_in serverAddress;
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons(8080);
 
-    // convert IPv4 address from text to binary
-    if (inet_pton(AF_INET, "127.0.0.1", &serverAddress.sin_addr) <= 0) {
+    string serverIP;
+    cin >> serverIP;
+    if (inet_pton(AF_INET, serverIP.c_str(), &serverAddress.sin_addr) <= 0) {
         perror("Invalid address/Address not supported");
         return 1;
     }
 
-    // connect to server
     if (connect(clientSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) < 0) {
         perror("Connection failed");
         return 1;

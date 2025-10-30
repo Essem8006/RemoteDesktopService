@@ -1,12 +1,12 @@
-#include <X11/Xlib.h>
+//#include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <iostream>
 #include <vector>
-#include <unistd.h> // for usleep()
-#include <string.h>
-#include <arpa/inet.h> // for AF_INET
-#include <netinet/in.h>
-#include <sys/socket.h>
+#include <unistd.h>
+//#include <string.h>
+#include <arpa/inet.h>
+//#include <netinet/in.h>
+//#include <sys/socket.h>
 #include <thread>
 
 using namespace std;
