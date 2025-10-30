@@ -200,7 +200,7 @@ int main() {
         while (XPending(display)) {
             XNextEvent(display, &e);
             if (e.type == KeyPress && controlData[3]) {
-                cout << e.xkey.keycode << endl;
+                close();
             };
             if (e.type == Expose) draw();
             if (e.type == ButtonPress) {
@@ -216,7 +216,6 @@ int main() {
             if (e.type == MotionNotify && 1 == controlData[0]) {
                 mousePos[0] = e.xbutton.x;
                 mousePos[1] = e.xbutton.y;
-                // send 1 byte identier or can I differentiate on server side?
                 int bytesSent = send(clientSocket, &mousePos, 8, 0);// DOUS THIS SEND BOTH 4BYTE INTS?
                 if (bytesSent  != 8) {
                     perror("Send mouse position failed");
