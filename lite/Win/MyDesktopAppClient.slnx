@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="MyDesktopApp/MyDesktopApp.vcxproj" Id="606d6436-9bcf-49e7-ae42-61f87d2d0d87" />
+</Solution>
