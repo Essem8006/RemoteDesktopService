@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <string.h>
 
 #pragma comment(lib, "Ws2_32.lib")
 #pragma comment(lib, "Gdi32.lib")
@@ -17,42 +18,51 @@ struct Frame {
     vector<BYTE> data;
 };
 
+string setPassword() {
+    cout << "\033[33m" << "__________                       __           ________                 __      __                 " << endl; // first bit is colour code
+    cout << "\\______   \\ ____   _____   _____/  |_  ____   \\______ \\   ____   _____|  | ___/  |_  ____ ______" << endl;
+    cout << " |       _// __ \\ /     \\ /  _ \\   __\\/ __ \\   |    |  \\_/ __ \\ /  ___/  |/ /\\   __\\/  _ \\\\____ \\ " << endl;
+    cout << " |    |   \\  ___/|  Y Y  (  <_> )  | \\  ___/   |    `   \\  ___/ \\___ \\|    <  |  | (  <_> )  |_> >" << endl;
+    cout << " |____|_  /\\___  >__|_|  /\\____/|__|  \\___  > /_______  /\\___  >____  >__|_ \\ |__|  \\____/|   __/" << endl;
+    cout << "        \\/     \\/      \\/                 \\/          \\/     \\/     \\/     \\/             |__ | " << endl << "\033[0m"; // reset to normal colour
+
+    cout << endl << "Code by @essem8006, ASKII art by @patorjk" << endl;
+    cout << endl << "To begin, please set a password: ";
+    string password;
+    cin >> password;
+    return password;
+}
+
 static Frame screenShot() {
     Frame frame{};
     frame.width = GetSystemMetrics(SM_CXSCREEN);
     frame.height = GetSystemMetrics(SM_CYSCREEN);
 
-    // Create a device context (DC) for the screen
-    HDC hScreenDC = GetDC(NULL);  // NULL refers to the entire screen
-    HDC hMemoryDC = CreateCompatibleDC(hScreenDC); // DC for in-memory bitmap
+    HDC hScreenDC = GetDC(NULL);  // NULL is for whole screen
+    HDC hMemoryDC = CreateCompatibleDC(hScreenDC);
 
-    // Create a compatible bitmap for the screen capture
     HBITMAP hBitmap = CreateCompatibleBitmap(hScreenDC, frame.width, frame.height);
 
-    // Select the bitmap into the memory DC
     SelectObject(hMemoryDC, hBitmap);
 
-    // Perform the screen capture (BitBlt from screen DC to memory DC)
     BitBlt(hMemoryDC, 0, 0, frame.width, frame.height, hScreenDC, 0, 0, SRCCOPY);
 
-    // Get the pixel data into a DIB (Device Independent Bitmap) structure
     BITMAPINFO bmi;
     memset(&bmi, 0, sizeof(bmi));
     bmi.bmiHeader.biSize = sizeof(bmi.bmiHeader);
     bmi.bmiHeader.biWidth = frame.width;
-    bmi.bmiHeader.biHeight = -frame.height;  // Negative for top-down DIB
+    bmi.bmiHeader.biHeight = -frame.height;
     bmi.bmiHeader.biPlanes = 1;
-    bmi.bmiHeader.biBitCount = 32;  // 32-bit color depth (BGRA)
+    bmi.bmiHeader.biBitCount = 32;  // 32-bit (BGRA)
 
-    // Allocate memory for the pixel data
-    int imageSize = frame.width * frame.height * 4;  // 4 bytes per pixel (BGRA)
+    // set memory
+    int imageSize = frame.width * frame.height * 4;  // 4 bytes for BGRA
 
     frame.data.resize(imageSize);
 
-    // Get the pixel data from the bitmap into the buffer
     GetDIBits(hMemoryDC, hBitmap, 0, frame.height, frame.data.data(), &bmi, DIB_RGB_COLORS);
 
-    // Clean up
+    // tidy up the toys
     DeleteObject(hBitmap);
     DeleteDC(hMemoryDC);
     ReleaseDC(NULL, hScreenDC);
@@ -82,6 +92,8 @@ bool sendAll(SOCKET s, const vector<BYTE>& data) {
 }
 
 int main() {
+    string password = setPassword();
+
     int port = 8080;
 
     WSADATA wsa;
@@ -94,7 +106,7 @@ int main() {
     server = socket(AF_INET, SOCK_STREAM, 0);
     if (server == INVALID_SOCKET)
     {
-        std::cerr << "Socket creation failed\n";
+        cerr << "Socket creation failed" << endl;
         return 1;
     }
 
@@ -104,16 +116,16 @@ int main() {
 
     if (bind(server, (sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR)
     {
-        std::cerr << "Bind failed\n";
+        cerr << "Bind failed";
         closesocket(server);
         return 1;
     }
 
     listen(server, 1);
-    cout << "Server waiting on port " << port << "...\n";
+    cout << "Server waiting on port " << port << "..." << endl;
 
     client = accept(server, (sockaddr*)&clientAddr, &clientSize);
-    cout << "Client connected.\n";
+    cout << "Client connected." << endl;
 
     while (true) {
         Frame frame = screenShot();
@@ -131,6 +143,6 @@ int main() {
     closesocket(server);
     WSACleanup();
 
-    cout << "Done.\n";
+    cout << "Done.";
     return 0;
 }
