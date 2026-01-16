@@ -17,6 +17,7 @@
 #define IDC_STATIC				-1
 #define IDD_INPUTBOX			101
 #define IDC_EDIT			1001
+#define IDC_LABEL			1002
 #endif
 // Next default values for new objects
 //
