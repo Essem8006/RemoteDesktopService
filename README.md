@@ -1,14 +1,4 @@
 # RemoteDesktopService
-Currently a means of sharing a screen from one laptop to another. Writen in C++ with a TCP connection and support only for linux.
+Currently a means of sharing a screen from one laptop to another within a network. Writen in C++ with a TCP connection.
 
-When compiling use -lX11.
-
-+------+---------+---------+---------------+
-| dir  | visuals | control | file transfer |
-+-----+---------+----------+---------------+
-| lite |   ✅️    |    ❌️   |       ❌️      | 
-+------+---------+---------+---------------+
-| func |   ✅️    |    ✅️   |       ❌️      | 
-+------+---------+---------+---------------+
-| full |   ✅️    |    ✅️   |       ✅️      | 
-+------+---------+---------+---------------+
+When compiling for Linux use -lX11.
