@@ -6,10 +6,12 @@
 #include "Socket.h"
 
 int InitSocket(const std::string& ip, uint16_t port, SOCKET& out) {
+    // start
     WSADATA wsaData;
     int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (result != 0)  return 1;
 
+    // get socket
     SOCKET sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (sock == INVALID_SOCKET) return 1;
 
@@ -18,6 +20,7 @@ int InitSocket(const std::string& ip, uint16_t port, SOCKET& out) {
     server.sin_port = htons(port);
     inet_pton(AF_INET, ip.c_str(), &server.sin_addr);
 
+    //connect
     if (connect(sock, (sockaddr*)&server, sizeof(server)) == SOCKET_ERROR) return 1;
 
     out = sock;

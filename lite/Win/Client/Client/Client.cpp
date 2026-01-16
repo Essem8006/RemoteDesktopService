@@ -1,21 +1,21 @@
 #include "resource.h"
-#define WIN32_LEAN_AND_MEAN  // Avoid including unnecessary headers from windows.h
-#include <windows.h>         // First, include windows.h
-#include <winsock2.h>        // Then, include winsock2.h for socket programming
-#include <ws2tcpip.h>        // Then, include ws2tcpip.h for higher-level TCP/IP support
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 
-#include <string.h>          // Standard C string manipulation
-#include <tchar.h>           // TCHAR support (wide character or regular)
-#include <intsafe.h>         // For integer safety functions
-#include <vector>            // Standard vector
-#include <iostream>          // Standard I/O
-#include <cstdlib>           // .c_str()
+#include <string.h>
+#include <tchar.h>
+#include <intsafe.h>
+#include <vector>
+#include <iostream>
+#include <cstdlib>
 
 #include "Socket.h"
 #include "Dialog.h"
 #include "Display.h"
 
-#pragma comment(lib, "ws2_32.lib")  // Link to the Winsock library
+#pragma comment(lib, "ws2_32.lib")  // Winsock lib
 
 
 using namespace std;
@@ -33,7 +33,6 @@ static TCHAR szTitle[] = _T("Remote desktop client");
 
 HINSTANCE hInst;
 
-// Forward declarations of functions included in this code module:
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR     lpCmdLine, _In_ int       nCmdShow) {
@@ -136,18 +135,10 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     // init for thread
     InitializeCriticalSection(&frameLock);
 
-    HANDLE hThread = CreateThread(
-        NULL,                 // default security
-        0,                    // default stack size
-        recieveFrames,        // thread function
-        &sock,                // parameter to thread function
-        0,                    // run immediately
-        NULL                  // thread ID not needed
-    );
+    HANDLE hThread = CreateThread(NULL, 0, recieveFrames, &sock,0, NULL);
 
 
-    ShowWindow(hWnd,
-        nCmdShow);
+    ShowWindow(hWnd, nCmdShow);
     UpdateWindow(hWnd);
 
     SetTimer(hWnd, 1, 10, NULL); // 10ms = 100fps
