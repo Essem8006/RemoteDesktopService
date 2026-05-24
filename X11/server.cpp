@@ -11,11 +11,11 @@
 
 using namespace std;
 
-#define PORT     8080 
+#define PORT     8080
 #define MAXLINE  1024
 
 Display *display;
-int serverSocket, clientSocket; 
+int serverSocket, clientSocket;
 struct sockaddr_in serverAddress;
 
 struct Frame {
@@ -69,17 +69,17 @@ Frame captureScreenFrame(Display* display) {
 }
 
 void init() {
-    // Creating socket file descriptor 
-    if ( (serverSocket = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) { 
-        perror("socket creation failed"); 
-        exit(0); 
+    // Creating socket file descriptor
+    if ( (serverSocket = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
+        perror("socket creation failed");
+        exit(0);
     }
 
-    // Filling server information 
-    serverAddress.sin_family    = AF_INET; // IPv4 
-    serverAddress.sin_addr.s_addr = INADDR_ANY; 
-    serverAddress.sin_port = htons(PORT); 
-      
+    // Filling server information
+    serverAddress.sin_family    = AF_INET; // IPv4
+    serverAddress.sin_addr.s_addr = INADDR_ANY;
+    serverAddress.sin_port = htons(PORT);
+
     // binding socket
     if (bind(serverSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) < 0) {
         perror("Bind failed");
@@ -112,6 +112,8 @@ void recieve_messages() {
             if (bytesReceived == 8) {
                 // -------------------- move mouse -----------------------------------
                 cout << mousePos[0] << ", " << mousePos[1] << endl;
+                XWarpPointer(display, None, DefaultRootWindow(display), None, None, None, None, mousePos[0], mousePos[1]);
+                XFlush(display);
             }
             else if (bytesReceived == 0) {
                 cout << "\nClient disconnected.\n";
@@ -187,6 +189,6 @@ int main() {
     close(serverSocket);
 
     recieve.join();
-    
+
     return 0;
 }

@@ -149,7 +149,7 @@ void recieve_messages(int clientSocket) {
             ptr += bytesReceived;
             len -= bytesReceived;
         }
-        
+
         // -------------------- display image -----------------------------------
         XWindowAttributes winAttr;
         XGetWindowAttributes(display, window, &winAttr);
@@ -216,7 +216,7 @@ int main() {
                     if (0 == y2%2 ) {
                         controlData[y2/2] = (controlData[y2/2]+1)%2;
                     }
-                    
+
                 }
             };
             if (e.type == MotionNotify && 1 == controlData[0]) {
@@ -236,7 +236,7 @@ int main() {
                 XDrawString(display,window,gc,3,winAttr.height - 3,text.c_str(),strlen(text.c_str()));
             };
         }
-        
+
         updateControls(0, 0);
 
         usleep(1000); // 1 ms = 1000 FPS
