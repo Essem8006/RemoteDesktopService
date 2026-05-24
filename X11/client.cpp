@@ -223,13 +223,15 @@ int main() {
                 mousePos[0] = e.xbutton.x;
                 mousePos[1] = e.xbutton.y;
                 // send 1 byte identier or can I differentiate on server side??
-                char fakeheader = 'm';
-                send(clientSocket, &fakeheader, sizeof(fakeheader), 0);// sizeof(fakeheader) is 1
-                int bytesSent = send(clientSocket, &mousePos, 8, 0);
-                if (bytesSent  != 8) {
-                    perror("Send mouse position failed");
-                    break;
-                }
+                if (mousePos[0] > 153 && mousePos[1] > 6) {
+                    char fakeheader = 'm';
+                    send(clientSocket, &fakeheader, sizeof(fakeheader), 0);// sizeof(fakeheader) is 1
+                    int bytesSent = send(clientSocket, &mousePos, 8, 0);
+                    if (bytesSent  != 8) {
+                        perror("Send mouse position failed");
+                        break;
+                    }
+                };
                 XClearArea(display, window, 3, winAttr.height - 13, 140, 10, False);// false means doesn't trigger expose event
                 string text = "Pointer at: " + to_string(e.xbutton.x) + ", " + to_string(e.xbutton.y);
                 XSetForeground(display, gc, black);
