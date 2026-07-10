@@ -128,8 +128,24 @@ void recieve_messages() {
             int key;
             int bytesReceived = recv(clientSocket, &key, 4, 0);
             if (bytesReceived == 4) {
-                // -------------------- key press -----------------------------------
-                cout << key << endl;
+                // -------------------- key press ----------------------------------- TODO REVIEW THIS TO SEE WHAT IS ACTUALLY NEEDED OR IF IT REALY WORKS
+                cout << key << " key pressed" << endl;
+                XKeyEvent event;
+                event.display = display;
+                event.window = DefaultRootWindow(display);
+                event.root = DefaultRootWindow(display);
+                event.subwindow = None;
+                event.x = 0; // X coordinate
+                event.y = 0; // Y coordinate
+                event.x_root = 0; // Root X coordinate
+                event.y_root = 0; // Root Y coordinate
+                event.same_screen = True;
+                event.type = KeyPress; // or KeyRelease
+                event.keycode = key;
+                event.state = 0; // Modifier state
+                XSendEvent(display, event.window, True, KeyPressMask, (XEvent *)&event);
+                event.type = KeyRelease;
+                XSendEvent(display, event.window, True, KeyReleaseMask, (XEvent *)&event);
             }
             else if (bytesReceived == 0) {
                 cout << "\nClient disconnected.\n";
